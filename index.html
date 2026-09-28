@@ -765,16 +765,12 @@ function Landing({ onJoin }) {
 // 最後の turns: は本物のTLSで包まれた候補で、学校や会社のDPIファイアウォールでも通りやすい。
 // ※このHTMLを見た人にはユーザー名とパスワードが見える。使用量がおかしければ
 //   metered のダッシュボードで credential を作り直すこと。
-// テスト用: URLの末尾に ?relay=1 (または #relay=1) を付けて開くと、TURN中継だけを使う。
-// 学校のWi-FiからTURN(TCP/TLS 443)が使えるかを切り分けるためのスイッチ。
-const FORCE_RELAY = /(^|[?&#])relay=1(&|$)/.test(location.search + location.hash);
-
 const ICE_SERVERS = [
   { urls: "stun:stun.relay.metered.ca:80" },
-  { urls: "turn:global.relay.metered.ca:80", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
-  { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
-  { urls: "turn:global.relay.metered.ca:443", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
-  { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
+  { urls: "turn:global.relay.metered.ca:80", username: "d8b151d52df6f9ac2ba5573e", credential: "iynHGVZ3Q3UQ7uyw" },
+  { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "d8b151d52df6f9ac2ba5573e", credential: "iynHGVZ3Q3UQ7uyw" },
+  { urls: "turn:global.relay.metered.ca:443", username: "d8b151d52df6f9ac2ba5573e", credential: "iynHGVZ3Q3UQ7uyw" },
+  { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "d8b151d52df6f9ac2ba5573e", credential: "iynHGVZ3Q3UQ7uyw" },
 ];
 
 function WordListRoom({ name, room, onLeave }) {
@@ -812,11 +808,6 @@ function WordListRoom({ name, room, onLeave }) {
   const remoteAudioRef = useRef(null);
   const callIdRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
-  const isCallerRef = useRef(false);          // 自分が発信側か(ICE再起動のofferは発信側だけが出す)
-  const restartCountRef = useRef(0);
-  const disconnectTimerRef = useRef(null);
-  const giveUpTimerRef = useRef(null);
-  const ringingCallIdRef = useRef(null); // 着信中(応答前)のcallId。応答前に届くICE候補を溜めるために使う
   const outgoingTimeoutRef = useRef(null);
   const hasConnectedRef = useRef(false);
   const [callRoute, setCallRoute] = useState(null); // null | "direct" | "relay"
@@ -925,9 +916,6 @@ function WordListRoom({ name, room, onLeave }) {
       clearInterval(callRouteIntervalRef.current);
       callRouteIntervalRef.current = null;
     }
-    if (disconnectTimerRef.current) { clearTimeout(disconnectTimerRef.current); disconnectTimerRef.current = null; }
-    if (giveUpTimerRef.current) { clearTimeout(giveUpTimerRef.current); giveUpTimerRef.current = null; }
-    restartCountRef.current = 0;
     if (pcRef.current) {
       pcRef.current.onicecandidate = null;
       pcRef.current.ontrack = null;
@@ -941,7 +929,6 @@ function WordListRoom({ name, room, onLeave }) {
     }
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
     pendingCandidatesRef.current = [];
-    ringingCallIdRef.current = null;
     callIdRef.current = null;
     hasConnectedRef.current = false;
     setIncomingOffer(null);
@@ -978,7 +965,7 @@ function WordListRoom({ name, room, onLeave }) {
       setCallRoute(isRelay ? "relay" : "direct");
       // ---- route log: 経路の詳細をログに出す(経路が変わったときだけ追記) ----
       const fmt = (c) => c
-        ? `${c.candidateType}/${c.protocol}${c.relayProtocol ? "(" + c.relayProtocol + ")" : ""} ${c.address || c.ip || "?"}:${c.port ?? "?"}${c.url ? " via " + c.url : ""}`
+        ? `${c.candidateType}/${c.protocol}${c.relayProtocol ? "(" + c.relayProtocol + ")" : ""} ${c.address || c.ip || "?"}:${c.port ?? "?"}`
         : "?";
       const sig = `${isRelay}|${fmt(local)}|${fmt(remote)}`;
       if (sig !== routeSigRef.current) {
@@ -987,51 +974,39 @@ function WordListRoom({ name, room, onLeave }) {
         const rtt = typeof pair.currentRoundTripTime === "number" ? `${Math.round(pair.currentRoundTripTime * 1000)}ms` : "-";
         const line = `${new Date().toLocaleTimeString("ja-JP", { hour12: false })} ${isRelay ? "中継経由" : "直接接続"} | 自分: ${fmt(local)} | 相手: ${fmt(remote)} | RTT ${rtt}`;
         console.log("[call-route]", line);
-        setRouteLog((prev) => [...prev, line].slice(-14));
+        setRouteLog((prev) => (first ? [line] : [...prev, line]).slice(-8));
       }
     } catch (e) { /* ignore - just don't show a route badge */ }
   }, []);
 
   const createPeerConnection = useCallback(() => {
-    const pc = new RTCPeerConnection({
-      iceServers: ICE_SERVERS,
-      iceTransportPolicy: FORCE_RELAY ? "relay" : "all",
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    // ---- 診断ログ: 接続前(失敗時)にも、ICE候補の収集結果とエラーを画面に出す ----
+    routeSigRef.current = null;
+    setRouteLog([]);
+    const diag = (msg) => {
+      const line = `${new Date().toLocaleTimeString("ja-JP", { hour12: false })} ${msg}`;
+      console.log("[call-diag]", line);
+      setRouteLog((prev) => [...prev, line].slice(-14));
+    };
+    const gathered = { host: 0, srflx: 0, relay: 0, prflx: 0 };
+    pc.addEventListener("icecandidate", (e) => {
+      if (e.candidate && e.candidate.type in gathered) gathered[e.candidate.type]++;
     });
-    // ---- 診断ログ: どんな候補が取れたか、どのICEサーバーが失敗したかを画面下に出す ----
-    const addLog = (t) => {
-      const time = new Date().toLocaleTimeString("ja-JP", { hour12: false });
-      setRouteLog((prev) => [...prev, `${time} ${t}`].slice(-14));
-    };
-    setRouteLog([`モード: ${FORCE_RELAY ? "中継固定(relay)" : "通常"}`]);
-    const seenCand = new Set();
-    pc.onicecandidateerror = (e) => {
-      addLog(`ICEエラー ${e.errorCode} ${e.url || ""} ${e.errorText || ""}`);
-    };
-    pc.onicegatheringstatechange = () => {
-      if (pc.iceGatheringState === "complete" && ![...seenCand].some((k) => k.startsWith("relay"))) {
-        addLog("⚠ TURN中継の候補が1つも取れませんでした");
+    pc.addEventListener("icegatheringstatechange", () => {
+      if (pc.iceGatheringState === "complete") {
+        diag(`候補収集完了: host×${gathered.host} srflx×${gathered.srflx} relay×${gathered.relay}${gathered.relay === 0 ? " ← TURN候補なし(TURNに届いていない)" : ""}`);
       }
-    };
+    });
+    pc.addEventListener("icecandidateerror", (e) => {
+      diag(`ICEエラー ${e.errorCode} ${e.url || ""} ${e.errorText || ""}`);
+    });
+    pc.addEventListener("iceconnectionstatechange", () => diag(`ICE状態: ${pc.iceConnectionState}`));
     pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        const key = `${e.candidate.type || "?"}/${e.candidate.protocol || "?"}`;
-        if (!seenCand.has(key)) { seenCand.add(key); addLog(`候補取得: ${key}`); }
-        sendSignal("ice", { candidate: e.candidate.toJSON() });
-      }
+      if (e.candidate) sendSignal("ice", { candidate: e.candidate.toJSON() });
     };
     pc.ontrack = (e) => {
       if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0];
-    };
-    // 通話中に経路が死んだとき、発信側がICEを再起動して新しい経路を探す。
-    const restartIce = async () => {
-      if (!isCallerRef.current || pcRef.current !== pc) return;
-      if (pc.signalingState !== "stable" || restartCountRef.current >= 5) return;
-      restartCountRef.current += 1;
-      try {
-        const offer = await pc.createOffer({ iceRestart: true });
-        await pc.setLocalDescription(offer);
-        sendSignal("reoffer", { sdp: pc.localDescription });
-      } catch (e) { /* ignore */ }
     };
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "connecting") {
@@ -1042,9 +1017,6 @@ function WordListRoom({ name, room, onLeave }) {
           outgoingTimeoutRef.current = null;
         }
         hasConnectedRef.current = true;
-        restartCountRef.current = 0;
-        if (disconnectTimerRef.current) { clearTimeout(disconnectTimerRef.current); disconnectTimerRef.current = null; }
-        if (giveUpTimerRef.current) { clearTimeout(giveUpTimerRef.current); giveUpTimerRef.current = null; }
         setCallStatus("active");
         setCallNotice("通話が繋がりました");
         checkCallRoute(pc);
@@ -1052,31 +1024,13 @@ function WordListRoom({ name, room, onLeave }) {
         // The selected route can in theory change mid-call (e.g. an ICE
         // restart), so keep re-checking every few seconds rather than once.
         callRouteIntervalRef.current = setInterval(() => checkCallRoute(pc), 5000);
-      } else if (pc.connectionState === "disconnected") {
-        // 一時的な途切れで戻ることもあるので、3秒待ってから再起動する
-        if (hasConnectedRef.current && !disconnectTimerRef.current) {
-          disconnectTimerRef.current = setTimeout(() => {
-            disconnectTimerRef.current = null;
-            if (pc.connectionState === "disconnected") restartIce();
-          }, 3000);
-        }
       } else if (pc.connectionState === "failed") {
-        if (hasConnectedRef.current) {
-          // 一度つながった通話は、すぐ切らずに再接続を試みる(最大20秒)
-          restartIce();
-          if (!giveUpTimerRef.current) {
-            giveUpTimerRef.current = setTimeout(() => {
-              giveUpTimerRef.current = null;
-              if (pcRef.current === pc && pc.connectionState !== "connected") {
-                setCallError("通話が切断されました（接続が失われました）。");
-                cleanupCall();
-              }
-            }, 20000);
-          }
-        } else {
-          setCallError("接続できませんでした。お互いのネットワーク環境が原因で繋がらない可能性があります。");
-          cleanupCall();
-        }
+        setCallError(
+          hasConnectedRef.current
+            ? "通話が切断されました（接続が失われました）。"
+            : "接続できませんでした。お互いのネットワーク環境が原因で繋がらない可能性があります。"
+        );
+        cleanupCall();
       }
     };
     return pc;
@@ -1089,7 +1043,6 @@ function WordListRoom({ name, room, onLeave }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
-      isCallerRef.current = true;
       callIdRef.current = `${name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const pc = createPeerConnection();
       pcRef.current = pc;
@@ -1118,7 +1071,6 @@ function WordListRoom({ name, room, onLeave }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
-      isCallerRef.current = false;
       callIdRef.current = incomingOffer.callId;
       const pc = createPeerConnection();
       pcRef.current = pc;
@@ -1130,7 +1082,6 @@ function WordListRoom({ name, room, onLeave }) {
       pendingCandidatesRef.current = [];
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      ringingCallIdRef.current = null;
       setCallPartner(incomingOffer.from);
       setIncomingOffer(null);
       // Not "active" yet - that's reserved for once ICE actually connects.
@@ -1175,50 +1126,15 @@ function WordListRoom({ name, room, onLeave }) {
         sendCallMessage({ kind: "call-signal", type: "busy", from: name, callId });
         return;
       }
-      ringingCallIdRef.current = callId;
-      pendingCandidatesRef.current = [];
       setCallPartner(payload.from);
       setIncomingOffer({ callId, from: payload.from, sdp: payload.sdp });
       setCallStatus("incoming");
       return;
     }
 
-    // 応答前(呼び出し中)に届いたICE候補・キャンセルの処理。
-    // callIdRef は応答するまで null なので、以前はここで全部捨てられていた。
-    if (callId === ringingCallIdRef.current && callId !== callIdRef.current) {
-      if (type === "ice") {
-        pendingCandidatesRef.current.push(payload.candidate);
-        return;
-      }
-      if (type === "end") {
-        setCallError("相手が通話をキャンセルしました。");
-        cleanupCall();
-        return;
-      }
-    }
-
     // Every other signal type belongs to a specific call; ignore anything
     // that isn't for the call we're currently in.
     if (callId !== callIdRef.current) return;
-
-    // 通話中のICE再起動(再ネゴシエーション)
-    if (type === "reoffer") {
-      const pc = pcRef.current;
-      if (!pc) return;
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        sendSignal("reanswer", { sdp: pc.localDescription });
-      } catch (e) { /* ignore */ }
-      return;
-    }
-    if (type === "reanswer") {
-      if (pcRef.current) {
-        try { await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload.sdp)); } catch (e) { /* ignore */ }
-      }
-      return;
-    }
 
     if (type === "answer") {
       if (pcRef.current) {
@@ -1264,7 +1180,7 @@ function WordListRoom({ name, room, onLeave }) {
       cleanupCall();
       return;
     }
-  }, [callStatus, cleanupCall, name, sendCallMessage, sendSignal]);
+  }, [callStatus, cleanupCall, name, sendCallMessage]);
 
   useEffect(() => { handleSignalRef.current = handleSignal; }, [handleSignal]);
 
