@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>たんご帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #ffe401;
+    --sky-dark: #d9bd00;
+    --sky-text: #8f7c00;
+    --cream: #f2e9d6;
+    --coral: #ff6f59;
+    --coral-dark: #e2543e;
+    --ink: #3c3c43;
+    --ink-soft: #8b8fa3;
+    --card-white: #ffffff;
+    --row-border: #ece2c9;
+    --sun: #ff9600;
+    --moon: #ffd600;
+    --font-head: 'Quicksand', 'Segoe UI', sans-serif;
+    --font-body: 'Nunito', 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #d9d2bd;
+    overscroll-behavior-y: none;
+  }
+
+  #app-root {
+    height: 100vh;
+    height: 100dvh;
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    background: #d9d2bd;
+    font-family: var(--font-body);
+  }
+
+  .card {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    background: var(--cream);
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  @media (min-width: 560px) {
+    #app-root { padding: 24px 16px; }
+    .card {
+      max-width: 460px;
+      height: min(88vh, 760px);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+  }
+
+  .btn-3d {
+    border: none;
+    border-radius: 14px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    padding: 13px 18px;
+    color: var(--ink);
+    background: var(--sky);
+    box-shadow: 0 4px 0 var(--sky-dark);
+    transition: transform 0.05s ease, box-shadow 0.05s ease;
+  }
+  .btn-3d:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--sky-dark); }
+  .btn-3d:disabled { background: #c7cae0; box-shadow: 0 4px 0 #aeb2d1; cursor: not-allowed; }
+
+  /* ---- Landing screen ---- */
+  .landing {
+    padding: 28px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+    background: var(--card-white);
+  }
+  .landing .eyebrow {
+    font-family: var(--font-head);
+    font-weight: 700;
+    color: var(--coral);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    margin: 0 0 6px;
+  }
+  .landing h1 {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 22px;
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-family: var(--font-head);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--row-border);
+    border-radius: 12px;
+    background: var(--cream);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+  }
+  .field input:focus { border-color: var(--sky); }
+  .room-row { display: flex; gap: 8px; }
+  .room-row input { flex: 1; min-width: 0; }
+  .ghost-btn {
+    border: 2px solid var(--row-border);
+    background: transparent;
+    color: var(--ink-soft);
+    padding: 0 14px;
+    border-radius: 12px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 12.5px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .ghost-btn:hover { border-color: var(--coral); color: var(--coral-dark); }
+  .primary-btn { width: 100%; margin-top: 8px; }
+  .hint { margin-top: 14px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+  .hint.warn {
+    background: #fff4e5;
+    color: #a15c00;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 600;
+  }
+
+  /* ---- Main screen: top bar ---- */
+  .top-bar {
+    flex: 0 0 auto;
+    background: var(--sky);
+    padding: 10px 14px 12px;
+    padding-top: max(10px, env(safe-area-inset-top));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .back-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.08);
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 14px;
+    background: #fff;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+  }
+  .search-input::placeholder { color: #b7bac7; }
+  .search-input:disabled { opacity: 0.7; }
+
+  /* ---- action row ---- */
+  .action-row {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 10px;
+    padding: 16px 14px 12px;
+    background: var(--cream);
+  }
+  .pill-btn {
+    flex: 1;
+    border: 2px solid var(--sky);
+    background: #fff;
+    color: var(--sky-text);
+    border-radius: 14px;
+    padding: 12px 10px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .pill-btn.show-toggle.active {
+    background: var(--coral);
+    border-color: var(--coral);
+    color: #fff;
+  }
+
+  /* ---- tabs ---- */
+  .tabs {
+    flex: 0 0 auto;
+    display: flex;
+    background: var(--card-white);
+    border-radius: 14px;
+    margin: 0 14px 12px;
+    overflow: hidden;
+    border: 2px solid var(--sky);
+  }
+  .tab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--sky-text);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 12px;
+    padding: 11px 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab.active { background: var(--sky); color: var(--ink); }
+
+  /* ---- message list styled as vocab rows ---- */
+  .messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--cream);
+  }
+
+  .empty-state {
+    margin: 40px auto;
+    text-align: center;
+    color: var(--ink-soft);
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 14px;
+    max-width: 220px;
+    line-height: 1.6;
+  }
+
+  .word-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 14px;
+    background: var(--card-white);
+    border-bottom: 1px solid var(--row-border);
+  }
+  .word-row-num {
+    flex-shrink: 0;
+    width: 18px;
+    padding-top: 6px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+  .speaker-btn {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: none;
+    background: var(--sky);
+    color: var(--ink);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .speaker-btn:active { background: var(--sky-dark); }
+  .word-row-main { flex: 1; min-width: 0; }
+  .word-row-english {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .word-row-meaning {
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555b6e;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .word-row-meaning.masked {
+    color: #c7cbd8;
+    letter-spacing: 2px;
+  }
+  .word-row-status {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding-top: 2px;
+  }
+  .status-icon { width: 28px; height: 28px; }
+  .word-row-time { font-size: 9.5px; font-weight: 700; color: var(--ink-soft); }
+
+  /* ---- bottom nav ---- */
+  .bottom-nav {
+    flex: 0 0 auto;
+    display: flex;
+    background: var(--sky);
+    padding: 10px 6px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .nav-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: rgba(60,60,67,0.5);
+    font-size: 20px;
+    padding: 4px 0;
+    cursor: pointer;
+  }
+  .nav-btn.active { color: var(--ink); }
+
+  .status-line {
+    flex: 0 0 auto;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 4px 0;
+    background: var(--cream);
+  }
+
+  .error-banner, .notice-banner {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .error-banner { background: #ffe4d6; color: #a14a00; }
+  .notice-banner { background: #fffbe0; color: var(--sky-text); }
+
+  /* ---- modal sheet ---- */
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20,20,30,0.4);
+    display: flex;
+    align-items: flex-end;
+    z-index: 20;
+  }
+  .sheet {
+    width: 100%;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px max(20px, env(safe-area-inset-bottom));
+    font-family: var(--font-body);
+  }
+  .sheet h2 {
+    font-family: var(--font-head);
+    font-size: 17px;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+  .sheet-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--row-border);
+    font-size: 14px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .sheet-row:last-of-type { border-bottom: none; }
+  .sheet-value { color: var(--ink-soft); font-weight: 700; }
+  .toggle-switch {
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    border: none;
+    background: #d8dbe6;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--sky); }
+  .toggle-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s ease;
+  }
+  .toggle-switch.on::after { transform: translateX(18px); }
+  .sheet-close {
+    margin-top: 16px;
+    width: 100%;
+  }
+  .sheet-leave {
+    margin-top: 10px;
+    width: 100%;
+    background: transparent;
+    border: 2px solid #ffb3a3;
+    color: #c94b34;
+    border-radius: 14px;
+    padding: 11px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .stat-big {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--sky-text);
+    text-align: center;
+    margin: 6px 0 2px;
+  }
+  .stat-sub {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  /* ---- call bar / incoming call sheet ---- */
+  .call-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--ink);
+    color: #fff;
+  }
+  .call-bar-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #f5a623;
+    flex-shrink: 0;
+    animation: call-pulse 1.4s infinite ease-in-out;
+  }
+  .call-bar-dot.connected {
+    background: #35d07f;
+    animation: none;
+  }
+  @keyframes call-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .call-notice {
+    background: #35d07f;
+    color: #fff;
+    font-weight: 700;
+  }
+  .call-route-badge {
+    margin-left: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    vertical-align: middle;
+  }
+  .call-route-badge.relay { background: rgba(245,166,35,0.35); }
+  .route-log {
+    flex: 0 0 auto;
+    position: relative;
+    background: #1e1e24;
+    color: #d6f5d6;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 1.5;
+    padding: 6px 30px 6px 10px;
+    max-height: 120px;
+    overflow-y: auto;
+    word-break: break-all;
+  }
+  .route-log button {
+    position: absolute; top: 2px; right: 4px;
+    border: none; background: transparent; color: #aaa; font-size: 14px; cursor: pointer;
+  }
+  .call-bar-text {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .call-bar-btn {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .call-bar-btn.hangup { background: var(--coral); }
+  .call-sheet { text-align: center; }
+  .call-caller {
+    margin: 0 0 18px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .call-sheet-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .call-accept { background: #35d07f; box-shadow: 0 4px 0 #23a361; }
+</style>
+</head>
+<body>
+<div id="app-root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
+
+const NTFY_BASE = "https://ntfy.sh";
+
+const WORD_BANK = [
+  "a piece of ～", "a couple of ～", "a number of ～", "dozens of ～", "plenty of ～", "a great/good deal (of ～)", "at home", "in time", "in fashion", "on time", "on duty", "on schedule", "up to date", "be aware of ～", "be made of ～", "be capable of ～", "be afraid of ～", "be sure of/about ～", "be composed of ～", "be based on/upon ～", "be different from ～", "be absent from ～", "be engaged in ～", "be responsible for ～", "be married (to ～)", "be satisfied with ～", "be curious about ～", "be well off", "be likely to do", "be willing to do", "be about to do", "lead to ～", "refer to ～", "contribute to ～", "amount to ～", "depend on/upon ～", "focus on ～", "rely on/upon ～", "get on (～)", "insist on/upon ～", "concentrate on ～", "look for ～", "search for ～", "prepare for ～", "think of ～", "consist of ～", "complain about/of ～", "die of/from ～", "suffer from ～", "result from ～", "graduate from ～", "differ from ～", "recover from ～", "hear from ～", "believe in ～", "succeed in ～", "major in ～", "abound in/with ～", "care about ～", "bring about ～", "deal with ～", "go through ～", "give up ～", "grow up", "pick up ～", "set up ～", "wake up (～)", "brush up (on) ～", "find out ～", "carry out ～", "point out ～", "figure out (～)", "turn out (～)", "fill out ～", "pick out ～", "put on ～", "work on (～)", "try on ～", "turn on (～)", "turn off (～)", "take off (～)", "get along", "get together (～)", "calm down (～)", "think over ～", "keep doing", "take place", "play a role/part (in ～)", "make sure (～)", "make sense", "make a difference", "make a mistake", "make progress", "make up one's mind", "do one's best", "keep one's promise/word", "get lost", "enjoy oneself", "have/take ～ off", "pay attention to ～", "take care of ～", "look forward to ～", "ask for ～", "get rid of ～", "fall in love with ～", "used to do/be", "had better do", "help A with B", "prefer A to B", "turn A into B", "prevent A from B", "remind A of/about B", "regard A as B", "associate A with B", "inform A of/about B", "after all", "all the time", "all the way", "～ and so on/forth", "and yet", "as ～ as possible/one can", "as a result (of ～)", "as a whole", "as usual", "at best", "at least", "at (the) most", "at a time", "at once", "at all", "at any rate", "at random", "more or less", "at times", "between you and me", "by hand", "by mistake", "by no means", "by the way", "far from ～", "for a while", "for example/instance", "for one thing", "in a hurry", "in addition (to ～)", "in any case/event", "in detail", "in fact", "in general", "in other words", "in public", "in reality", "in the end", "in the future", "in the long run", "no doubt", "no longer ～", "not always ～", "on earth", "on the other hand", "so far", "sooner or later", "these days", "according to ～", "owing/due to ～", "thanks to ～", "in spite of ～", "all over (～)", "apart from ～", "aside from ～", "ahead of ～", "in search of ～", "in preparation", "each other", "so ～ that …", "A as well as B", "not only A but (also) B", "as if/though …", "as soon as …", "Something is wrong with ～.", "bring up ～", "call off ～", "carry on (～)", "come about", "come by ～", "come up with ～", "do away with ～", "find fault with ～", "get over", "hand in ～", "learn ～ by heart", "look into ～", "look over ～", "pass away", "put off ～", "put together ～", "put up ～", "put up with ～", "set about ～", "set in", "take after ～", "of importance", "along with ～", "in connection with ～", "on board (～)", "prior to ～", "(every) once in a while", "above all (else)", "all of a sudden", "(all/just) the same", "as a (general) rule", "as well", "before long", "by degrees", "for good", "for the most part", "from time to time", "in advance", "in all", "in particular", "on occasion(s)", "on purpose", "over and over (again)", "right away", "agree to ～", "agree with ～", "apply for ～", "apply to ～", "remember doing", "remember to do", "catch up with/to ～", "keep pace with ～", "keep up with ～", "leave ～ alone", "let alone ～", "correspond to ～", "correspond with ～", "hit on/upon ～", "occur to ～", "dawn on ～", "make the best of ～", "make the most of ～", "lay off ～", "lay out ～", "be concerned about/for ～", "be concerned with/in ～", "be free from/of ～", "be free to do", "be familiar to ～", "be familiar with ～", "be true of ～", "be true to ～", "be tired from/with ～", "be tired of ～", "be bound for ～", "be bound to do", "be anxious about ～", "be anxious to do", "～ to come", "～ to go", "anything but ～", "nothing but ～", "at first", "for the first time", "in the way (of ～)", "on the way (to ～)", "by now", "for now", "on the contrary", "to the contrary", "in the air", "on the air", "by chance", "by any chance", "as a matter of course", "as a matter of fact", "at a distance", "in the distance", "inside out", "upside down", "provide A with B", "supply A with B", "mistake A for B", "take A for B", "look on/upon A as B", "think of A as B", "distinguish A from B", "tell A from B", "participate in ～", "take part in ～", "compensate for ～", "make up (～)", "care for ～", "look after ～", "show up (～)", "turn up (～)", "consist in ～", "lie in ～", "give in (～)", "give way (to ～)", "stand out", "stick out", "cling to ～", "stick to ～", "count on/upon ～", "rest on/upon", "look out for ～", "watch out for ～", "hand over ～", "turn over ～", "date back to ～", "date from ～", "put aside ～", "set aside ～", "sit up", "stay up", "hold back ～", "keep back ～", "feel sorry for ～", "take/have pity on ～", "sympathize with ～", "take pride in ～", "pride oneself on ～", "surrender to ～", "yield to ～", "be essential to ～", "be indispensable to/for ～", "be equal to ～", "be equivalent to ～", "be apt to do", "be inclined to do", "in a sense", "in a way", "first of all", "in the first place", "back and forth", "up and down", "at present", "at the moment", "in a word", "in short", "generally speaking", "on the whole", "all in all", "in principle", "in theory", "at all cost(s)/any cost", "by all means", "as it were", "so to speak", "for one's (own) part", "on one's part", "for the present", "for the time being", "close/near at hand", "(just) around the corner", "for all ～", "with all ～", "as for ～", "as to ～", "not to mention ～", "to say nothing of ～", "be dependent on/upon ～", "be independent of ～", "in order", "out of order", "look down on/upon ～", "look up to ～", "do with ～", "do without ～", "in/within sight", "out of sight", "at one's ease", "ill at ease", "act on/upon ～", "break in ～", "break out", "break up ～", "call for ～", "call on/upon ～", "come across ～", "come to ～", "give out ～", "go by ～", "go off", "go on ～", "go out", "go over ～", "go with ～", "hold out ～", "hold up ～", "live on ～", "look to ～", "look up ～", "put out ～", "settle down", "stand by ～", "stand for ～", "take in ～", "take on ～", "take to ～", "take up ～", "turn down ～", "turn in ～", "make for ～", "make out ～", "meet with ～", "provide for ～", "put down ～", "run over ～", "set out ～", "be due to do", "up to ～", "at large", "in effect", "all but ～", "at length", "next to ～", "on end", "by way of ～", "add to ～", "adapt to ～", "object to ～", "admit to ～", "conform to/with ～", "resort to ～", "keep to ～", "get to ～", "adhere to ～", "reflect on/upon ～", "decide on/upon ～", "fall on/upon ～", "feed on ～", "run into ～", "break into ～", "enter into ～", "burst into ～", "dispose of ～", "approve of ～", "boast of/about ～", "become of ～", "derive from ～", "aim at ～", "interfere with ～", "part with ～", "long for ～", "send for ～", "go about ～", "run across ～", "end up", "use up ～", "sum up ～", "clear up ～", "tie up ～", "cheer up ～", "blow up ～", "call up ～", "shut up ～", "step up ～", "cut down/back (on) ～", "slow down ～", "break down ～", "hand down ～", "take down ～", "burn down ～", "come out", "run out", "speak out/up", "drop out", "sort out ～", "wear out ～", "roll out ～", "iron out ～", "set off ～", "show off ～", "keep off ～", "give off ～", "break off ～", "take over ～", "put in ～", "drop in", "cut in", "pass on ～", "give away ～", "adjust (A) to B", "compare A with/to B", "expose A to B", "leave A (up) to B", "attach A to B", "attribute A to B", "owe A to B", "confine A to B", "liken A to B", "keep A from B", "discourage A from B", "forbid A from B", "prohibit A from B", "order A from B", "substitute A for B", "exchange A for B"
+];
+
+// WORD_BANK と同じ順番・同じ要素数(500)で対応する日本語訳。
+// wordFor と meaningFor は同じインデックスを使うので、常に単語と訳がずれずに対応する。
+const JAPANESE_BANK = [
+  "１つの～", "２つの～、２，３の～", "いくつもの～、かなり多くの～", "数十もの～、何ダースもの～", "たくさんの～", "たくさん（の～）", "①在宅して、家庭で ②くつろいで ③精通して", "①間に合って ②やがて、そのうちに", "流行して", "時間通りに［で］", "当番で、勤務時間中で", "予定通りで、定時に", "最新（式）の", "～を知っている、～に気づいている", "～でできている", "～ができる、～の可能性がある", "～を恐れる［怖がる］、～を心配している", "～を確信している", "～から構成されている", "～に基づいている", "～とは違っている", "～を欠席する", "～に従事している、忙しく～をしている", "～に責任がある", "（～と）結婚している", "～に満足している", "～を知りたがる、～に好奇心の強い", "裕福である", "…しそうである", "…してもかまわない", "今にも…しようとしている", "～（という結果）を引き起こす、～へと通じる", "①～に言及する ②～を参照する、～に問い合わせる", "～の一因となる、～に貢献する、～に寄付［寄稿］する", "総計～になる", "～に頼る、～しだいである", "～に集中する、～に焦点を合わせる", "～に頼る", "①（公共の乗り物など）に乗る ②仲良くやっていく、（なんとか）やっていく", "～を主張する", "～に集中する", "～を探す［捜す］", "～を探す［捜す］", "～の準備をする、～に備える", "①～をしようかなと思う、～のことを考える ②～を思いつく ③～を思い出す", "～から成り立っている", "（苦痛など）を訴える、～について不平を言う", "～で死ぬ", "（病気など）で苦しむ［悩む］", "～から起こる", "～を卒業する", "～と異なる", "～から立ち直る［回復する］", "～から便り［電話・伝言］がある", "～の価値［存在］を信じる、～を信用する", "～に成功する", "（大学生が）～を専攻する", "（場所が）～に富む", "～に気にかける、～に関心を持つ", "～を引き起こす", "～を扱う,処理する", "①～を通過する ②（苦しみなど）を経験する", "～をあきらめる、～捨てる［やめる］", "大人になる、（事態などが）生じる", "～を（車などに）乗せる、～拾う", "～を立てる［建てる］、～を創設する［始める］", "目が覚める、（人）の目を覚まさせる", "（語学など）をやり直して磨きをかける", "（調査などの結果）を見つけ出す、（真相）を知る", "～を実行する", "～を指摘する", "～を理解する、～を計算する、～を解く", "①～であることが分かる、（結果的に）～になる ②～を産出する ③（催しなどに）繰り出す", "（書類など）に書き込む", "～を選ぶ", "～を（身に）つける、（電気器具ガスなど）をつける", "①働き続ける ②～に取り組む、～を手がける、～に影響を与える、（薬などが）～に効く", "～を試着する", "（スイッチなど）をつける、（水・ガスなど）を出す、（明かりなどが）つく", "（スイッチなど）を消す、（水・ガスなど）を止める、（明かりなどが）消える", "①～を脱ぐ、～を取り除く ②離陸する、（流行・売り上げなどが）急増［急伸］する ③～を休暇としてとる", "①暮らす、（なんとか）やっていく ②仲良くやっていく、進む", "集まる、～を集める", "～を落ち着かせる［静める］、落ち着く［静まる］", "～をよく考える", "…し続ける", "催される、起こる", "（～で）役割を演じる［果たす］", "（～を）確かめる、確実に～をする", "意味をなす、道理にかなう", "違いが生じる、重要である", "間違いをする", "進歩する", "決心する", "最善を尽くす", "約束を守る", "道に迷う", "楽しい時を過ごす", "～を休みとしてとる", "～に注意を払う", "～に気をつける、～の世話をする", "～を楽しみに待つ", "～を求める", "（厄介なもの）を取り除く", "（事・物）を大好きになる、（人）と恋に落ちる", "～したものだった、昔は～であった", "…したほうがいい、…すべきだ", "AのBを手伝う、AをBで助ける", "ＢよりＡを好む", "ＡをＢに（質的に）変える", "AがBするのを妨げる、AをBから防ぐ", "AにBを思い出させる", "AをBとみなす", "ＡをＢと結びつけて考える", "AにBを知らせる", "結局（は）、やっぱり", "いつも、常に", "ずっと、はるばる", "～など", "それにも関わらず", "できる限り～", "（～の）結果として", "全体として（の）", "いつものように", "よくても、せいぜい", "少なくとも", "せいぜい、多くても", "一度に", "①すぐに ②同時に", "①（否定文で）まったく ②（疑問文で）一体、そもそも ③（肯定文で）そもそも、ともかく", "とにかく、いずれにしても", "無作為に、手当たり次第に", "①多かれ少なかれ、程度の差はあれ②ほぼ、おおよそ", "ときどき", "ここだけの話だが、内緒だが", "手で", "間違って", "全然～ない", "ところで", "～からほど遠い、～どころではない", "しばらくの間", "例えば", "一つには", "急いで、あせって", "（～に）加えて、さらに", "とにかく、いずれにしても", "詳細に", "①実際に ②（前言と対照して）（ところが）実際は", "①一般に ②（名詞の後に置いて）一般の", "言い換えれば、つまり", "人前で、公然と", "（ところが）実際には、（想像などではなく）現実に", "結局は、ついには", "将来は、今後は", "長い目で見れば、結局は", "おそらく、たぶん", "もはや～ない", "必ずしも～ではない", "①（疑問詞を強めて）一体全体 ②（最上級を強めて）世界中で", "他方では、これに反して", "今までの所", "遅かれ早かれ", "近頃は、この頃は", "①～によれば ②～に従って、～に応じて", "～のために", "～のおかげで", "～にもかかわらず", "（～の）至る所に［で］、一面に", "①～のほかに ②～を除いては", "～を除いては、～のほかに", "（時間的に）～より先に、（位置的に）～の前に、～より進歩して", "～を求めて［探して］", "～の準備中で", "お互い", "（結果を表して）非常に～なので…する", "BだけでなくAも", "AだけでなくBも", "まるで…するように", "…するやいなや", "～はどこか調子がおかしい［故障している］", "①～を育てる②（問題・話題など）を持ち出す = raise", "～を中止する［取り消す］ = cancel", "（～を）続ける = happen, occur", "起こる = continue", "～を手に入れる = get, obtain", "（解決策など）を思いつく = devise, invent, conceive", "～を取り除く、～を廃止する = eliminate, abolish", "～にけちをつける、～を非難する = criticize", "～を克服する、（病気など）から回復する = overcome", "（手渡しで）～を提出する［届ける］ = submit", "～を暗記する = memorize", "～を調べる = investigate", "～を（ざっと）調べる = examine", "死ぬ = die", "～を延期する = postpone", "（部品など）を組み立てる、（考えなど）をまとめる = assemble, build", "①～を掲げる、～を上げる、～を建てる②～を泊める = raise, lift, erect, construct/accommodete", "～を我慢する = tolerate, endure, stand", "～を始める = begin, start", "始まる = begin, start", "～に似ている = resemble", "重要な = important", "～と一緒に、～に加えて = besides", "～に関連して = concerning, about", "（乗り物）に乗って、乗って（た） = aboard", "～より前で = before", "ときどき = sometimes, occasionally", "とりわけ、特に = especially, particularly", "突然に、不意に = suddenly, abruptly", "それでもやはり = nevertheless", "普通は、概して = generally, usually", "～もまた = too, also", "間もなく = soon", "徐々に = gradually", "永久に = forever, permanently", "大体は、大部分は = mostly, generally", "ときどき = sometimes, occationally", "前もって = beforehand", "全部で = altogether", "特に =especially, particularly", "ときどき = sometimes, occationally", "わざと、故意に = intentionally, purposely", "何度も繰り返し = repeatedly", "今すぐ、直ちに = immediately", "（提案・計画・条件など）に同意する", "（人が）（人・考えなど）に同意する、（気候・食物などが）～に合う、～に一致［適合］する", "（仕事・許可など）を申し込む［志願する］", "①～に当てはまる ②（人・場所・組織）に申し込む", "…したのを覚えている", "忘れずに…する", "（遅れた状態から）～に追いつく", "～に遅れずついていく", "～に遅れずについていく", "～をそのままにしておく、～に干渉しない", "～は言うまでもなく", "～に一致する、～に相当する", "～とやりとりを交わす、～と文通する", "～を思いつく、～に出くわす", "ふと（人）の心に浮かぶ", "（考えなどが）（人）にわかり始める［思い浮かぶ］", "（不利な状況で）～を最大限に利用する［善処する］", "～を最大限に利用する", "～を一時解雇する", "～を並べる、～を設計する", "～を心配している", "～に関係している", "～がない", "自由に…できる", "（人）によく知られている", "（物事）をよく知っている", "～に当てはめる", "～に忠実である", "～で疲れる", "～に飽きる［うんざりしている］", "～行きである", "きっと…する、…する責任がある", "～を心配している", "…したがる", "（名詞の後に置いて）将来の～、来たるべき～", "（名詞の後に置いて）あと～、残りの～、持ち帰り用の～", "全然～ではない、～どころではない", "ただ～だけ、～にすぎない", "最初は", "初めて", "（～の）邪魔になって", "（～への）途中で", "今はもう、今頃は", "今のところは、当分は", "それどころか、それに反して", "それと反対の［に］", "未決定で、空中で［の］、（雰囲気などが）感じられて", "放送中の［で］", "偶然に", "（疑問文で）もしかして", "当然のこととして", "実を言うと、実際は", "ある距離を置いて", "遠方に［で］", "裏返して、ひっくり返して", "逆さまに、ひっくり返って", "AにBを供給する", "AにBを供給する", "AをBと間違える", "AをBだと（誤って）思う［間違える］", "AをBと見なす", "AをBと見なす", "AをBと区別する", "AとBを区別する", "～に参加する", "～に参加する", "～の埋め合わせをする、～を補償する", "①～を構成する、～を作り上げる ②仲直りをする ③～の埋め合わせをする", "①～の世話をする ②～を好む、～を望む", "～の世話をする", "①（予定の所に）現れる ②目立つ、～を目立たせる", "①現れる、起こる ②（ガス・音量など）を大きくする、～を探し出す", "～にある", "～にある", "①屈服する ②～を提出する", "（～に）屈服する、（～に）道を譲る", "際立つ、目立つ", "突き出る、目立つ", "～にくっつく、～に固執［執着］する", "（主義・決定など）を堅持する、～にくっつく", "～に頼る、～を当てする", "～に基づく、～に頼る", "～に気をつける", "～に気をつける", "～を引き渡す、～を手渡す", "①～を引き渡す、～を譲る ②～をひっくり返す、（ページなど）をめくる、ひっくり返る", "～にさかのぼる、～に始まる", "～から始まる、～にさかのぼる", "～を蓄える、～をわきに置く、～を取っておく", "～を蓄える、～を取っておく、～をわきに置く", "①（寝ないで）起きている ②（寝た状態から）上半身を起こす ③きちんと座る", "（寝ないで）起きている", "～を制止する、（真相など）を隠す", "（真相など）を隠す、～を制止する", "～を気の毒に思う、～に同情する", "～に同情する", "～に同情する", "～を誇り［自慢］に思う", "～を誇り［自慢］に思う", "～に屈する", "～に屈する、～に道を譲る", "～にとって不可欠である", "～にとって不可欠である", "～に等しい", "～に等しい", "～しがちである", "～する傾向がある、～したい気がする", "ある意味では、ある点で", "ある意味では、ある点で", "まず第一に", "まず第一に", "行ったり来たり、前後［左右］に", "行ったり来たり、上下に", "現在は、目下", "（現在時制で）現在は、（過去時制で）ちょうどその時", "要するに、つまり", "つまり、手短に言えば", "一般的に言えば", "全体的には、概して", "全体的には、概して", "理論的に（は）、原則的に（は）", "理論上は", "ぜひとも", "①ぜひとも、必ず ②（承諾の返事として）ぜひどうぞ", "いわば", "いわば", "～としては、～に関する限りは", "～の側での、～としては", "当分の間（は）、差し当たり", "当分の間（は）、差し当たり", "（距離・時間的に）すぐ近くに", "（距離・時間的に）すぐ近くに", "～にもかかわらず", "～にもかかわらず", "（人・物）～について言えば、～に関する限り", "（物）～に関しては", "～は言うまでもなく", "～は言うまでもなく", "～に依存している", "～から独立している", "整頓されて、順調で、適切で", "故障して、順序が狂って", "～を見下す", "～を尊敬する", "①（couldを伴って）～があればありがたい ②（受動態で）～をすませた、～を縁を切った ③（whatを使った疑問文・否定文で）を処理［処置］する", "～なしですます", "見えて、視界に入って", "見えなくて、視界から消えて", "くつろいで", "不安で、落ち着かないで", "①～に取り組む、～に作用する ②（命令・信念など）に従って行動する", "①押し入る、口を挟む ②～を慣らす", "①（火事・戦争などが）起こる ②（汗・吹き出物などが）出る、急にしだす", "①ばらばらになる［解散する］、～をばらばらにする［解散させる］ ②（人が）別れる、（関係などが）終わる、～を終わらせる", "①～を必要とする、～を求める ②（人）を誘い［迎え］に行く、（物）を取りに行く", "①（人）を訪問する ②～に要求する", "①～を偶然見つける、～に偶然出会う ②（考えなどが）（相手に）伝わる［理解される］", "①～に達する、～に来る ②（～to do）…するようになる③意識を回復する、正気に戻る", "①～を配る、～を発する ②（供給物・力などが）尽きる［なくなる］", "①（時などが）たつ、通り過ぎる ②～の名で通る［知られる］、～によって行動［判断］する", "①出かける、去る、（電灯などが）消える ②（仕掛けが）作動する、（爆薬が）爆発する、（銃などが）発射される", "①（状況などが）続く、（時間が）過ぎる ②（進行形で）起こる、行われる ③（旅行など）に出かける", "①出かける②（灯火などが）消える、気絶する、死ぬ", "①～に詳細に目を通す、～を調べる ②～を復習する、～を繰り返す", "①～と付き合う、～と一緒に行く ②～に似合う", "①（手など）を差し出す ②（希望など）を抱かせる、持ちこたえる［耐える］", "①～を持ち上げる、～を支える、持ちこたえる ②～を遅らせる ③～に強盗に入る", "①～を常食にする ②（～の収入・金額）で生活する ③生き続ける", "①～の方を見る、～に気をつける ②～に頼る、～を当てにする", "①（辞書などで）～を調べる ②（人）を訪ねる ③（景気などが）上向く［好転する］", "①（火・明かりなど）を消す ②～を出す", "①定住する、落ち着く ②（腰を据えて）始める", "①傍観する、待機する ②～を支持［擁護］する、（約束など）を守る", "①～意味する、～の略である ②（否定文・疑問文で）～を許容する、を我慢する", "①～を取り入れる、～を理解する ②～をだます ③～を見物をする", "①～を引き受ける、～を雇う ②（様相・色・性質など）を呈する［帯びる］", "（習慣的に）～を始める、～にふける", "①（場所・時間）を取る、～を取り上げる ②（仕事・趣味など）を始める", "①～を却下［拒絶］する ②（音量・火力など）を小さくする", "①～を提出する ②～を引き渡す、～を返却する", "①～のほうへ進む ②～に寄与する［役立つ］", "①（通例canを伴い、否定文・疑問文で）～を理解する ②（通例canを伴って）～を見分ける ③（書類・小切手など）を作成する", "①～を受ける、～を経験する ②～と（約束して）会う、～と会見する", "①～を扶養する ②～に備える、（法律が）～を規定する", "①～を置く ②～を鎮める［抑える］", "①（車が）～をひく ②（～から）あふれる", "①出発する ②～し始める ③～を並べる、～を設計する", "①～のため［結果］である ②～する予定である", "①～まで ②～次第である、～の責任である ③（悪いこと）をしようとしている", "①（名詞の前に置いて）一般の、全体としての ②逃走中で、逮捕されないで", "①事実上、実際は ②（法律などが）実施されて", "①～も同然、ほとんど～ ②～以外すべて", "①詳細に、長々と②とうとう、ついに", "①（場所・位置）～の次の［に］ ②（否定を表す語の前に置いて）ほとんど～", "①連続して ②直立して、垂直にして", "①～経由で ②～として、～のつもりで（の）", "～を増やす", "（環境など）に順応する［慣れる］", "～に反対する", "～を認める［告白する］", "～と一致する、～に従う［合わせる］", "（手段など）に訴える［頼る］", "～に沿って進む、～から離れない、～に従う", "①～に到着する ②～できる、～するようになる", "（主義・規則など）に忠実に従う、～にくっつく", "～を熟考［反省］する", "～を（どれにするか）決める、（複数の選択肢から）～に決める", "（責任・仕事などが）～に降りかかる、（休日などが）～に当たる", "～を常食［餌］にする", "～に偶然出会う、～を偶然見つける、～にぶつかる", "①～に侵入する②急に～をしだす", "（契約など）を取り結ぶ、（議論など）を始める", "急に～をしだす、突然～に入る", "～を処分する、～を平らげる", "～に賛成する、～を承認する", "～を自慢する、～を誇らしげに話す", "（what, whatever を主語にして）～はどうなるか", "～に由来する、～から出ている", "～を目指す、～を狙う", "～の邪魔をする、～を妨げる", "（物）を（しぶしぶ）手放す", "～を切望する", "（人）を呼ぶ、（物）を取り寄せる", "～に取りかかる、～に精を出す", "①～を偶然見つける、～に偶然で会う ②～を走って横切る", "最後には～になる", "～を使い果たす", "（～を）要約する、～を合計する", "（天候が）晴れる、（疑念・不明点など）を明らかにする", "（人）を拘束する、～を固く縛る、提携する", "元気づく、～を元気づける［応援する］", "爆発する、かっとなる、～を爆破する", "（～に）電話をかける、（記憶・勇気など）を呼び起こす", "話をやめる、～を散らせる", "①近づく、（壇上などに）上がる ②（量・速度など）を増す、（活動など）を促進する", "～（の量）を減らす、～を切り詰める", "（～の）速度を落とす、ペースが落ちる", "①～を分解する、～を壊す ②故障する、取り乱す、肉体的［精神的］に参る", "～を（子孫［後世］に）伝える", "～を書き留める、（建築など）を取り壊す", "～を全焼させる、（建物が）全焼する", "現れる、ばれる、出版される", "使い果たす、尽きる", "はっきり［思い切って］話す", "脱落する、中途退学する", "～を整理する、～を処理する", "～をすり減らす［疲れ果てさせる］、すり減らす", "（新製品）を製造［発売］する、～を転がして出す、転がり出る", "（問題など）を解決［調節する］", "出発する、～を引き起こす", "（～を）見せびらかす", "～を近づけない、～に近づかない、～を慎む", "（光・音・においなど）を発する", "（～を）急にやめる、～を切り離す", "（～を）引き継ぐ、～を支配する", "①（物・言葉など）を差し入れる［加える］、（設備など）を取り付ける ②（労力・時間・金など）を注ぎ込む［投入する］", "（口調で）ちょっと立ち寄る", "（人・車が）割り込む", "（物・情報など）を次に回す［伝える］", "（秘密など）を漏らす、～をただでやる、～を配る", "（Aを）Bに合わせて調節する", "AとBを比較する、AをBにたとえる", "AをBにさらす", "AをBに任せる、AをBに残す", "AをBに取りつける［付与する］", "AをBのせい［結果］と考える", "A（恩・義務など）をBに負っている、A（金）をBに借りている", "AをBに限定する、AをBに閉じ込める", "AをBにたとえる", "AにBをさせない、AをBから守る", "A（人）にBを思いとどまらせる", "A（人）にBを禁止する", "A（人）にBを禁止する", "BにAを注文する", "Bの代わりにAを使う", "AをBと交換する"
+];
+
+function randomRoomCode() {
+  const words = ["nami", "yuki", "sora", "hoshi", "kaze", "mori", "umi", "tsuki"];
+  const w = words[Math.floor(Math.random() * words.length)];
+  const n = Math.floor(1000 + Math.random() * 9000);
+  return `${w}-${n}`;
+}
+
+// Deterministic ASCII-only topic name derived from the user's room code,
+// so any characters (including Japanese) work as a passphrase.
+function roomToTopic(room) {
+  const input = room.trim().toLowerCase();
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  const hex = (h1 >>> 0).toString(16).padStart(8, "0") + (h2 >>> 0).toString(16).padStart(8, "0");
+  return `cc-chat-${hex}`;
+}
+
+// Small stable hash so a given message id always maps to the same
+// "vocabulary word", even after re-fetching or reordering.
+function hashToIndex(str, mod) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  return h % mod;
+}
+
+function wordFor(id) {
+  return WORD_BANK[hashToIndex(String(id), WORD_BANK.length)];
+}
+
+function meaningFor(id) {
+  return JAPANESE_BANK[hashToIndex(String(id), JAPANESE_BANK.length)];
+}
+
+function speak(word) {
+  try {
+    if (!("speechSynthesis" in window)) return;
+    const spoken = word.replace(/～/g, "").replace(/[()]/g, "").replace(/\//g, " or ").replace(/\s+/g, " ").trim();
+    const u = new SpeechSynthesisUtterance(spoken);
+    u.lang = "en-US";
+    u.rate = 0.95;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch (e) { /* speech unavailable, ignore */ }
+}
+
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1180, ctx.currentTime + 0.09);
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.36);
+  } catch (e) { /* audio unavailable, ignore */ }
+}
+
+// Weather-style "mastery status" badges. In a real vocab app these icons
+// mark how well a word is known; here they double as a way to tell
+// participants apart without looking like sender avatars. "Mine" is
+// always the sun; everyone else gets one of: moon, cloud, dark cloud, or
+// umbrella, assigned deterministically from their name.
+const OTHER_ICON_TYPES = ["moon", "cloud", "darkCloud", "umbrella"];
+
+function iconTypeFor(sender) {
+  return OTHER_ICON_TYPES[hashToIndex(String(sender), OTHER_ICON_TYPES.length)];
+}
+
+function StatusIcon({ mine, sender }) {
+  const type = mine ? "sun" : iconTypeFor(sender);
+
+  if (type === "sun") {
+    const color = "var(--sun)";
+    return (
+      <svg className="status-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="5.2" fill={color} />
+        {[0,45,90,135,180,225,270,315].map((deg) => (
+          <line key={deg} x1="12" y1="12" x2="12" y2="2.5"
+            stroke={color} strokeWidth="2" strokeLinecap="round"
+            transform={`rotate(${deg} 12 12)`} />
+        ))}
+      </svg>
+    );
+  }
+  if (type === "moon") {
+    return (
+      <svg className="status-icon" viewBox="0 0 24 24">
+        <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5Z" fill="#ffd600" />
+      </svg>
+    );
+  }
+  if (type === "cloud") {
+    return (
+      <svg className="status-icon" viewBox="0 0 24 24">
+        <path d="M7 17.5a4 4 0 0 1-.4-7.98 5 5 0 0 1 9.62-1.7A4.5 4.5 0 0 1 17.5 17.5H7Z" fill="#fff08a" />
+      </svg>
+    );
+  }
+  if (type === "darkCloud") {
+    return (
+      <svg className="status-icon" viewBox="0 0 24 24">
+        <path d="M7 17.5a4 4 0 0 1-.4-7.98 5 5 0 0 1 9.62-1.7A4.5 4.5 0 0 1 17.5 17.5H7Z" fill="#a89400" />
+      </svg>
+    );
+  }
+  if (type === "umbrella") {
+    return (
+      <svg className="status-icon" viewBox="0 0 24 24">
+        <path d="M4 11.5a8 8 0 0 1 16 0Z" fill="#e05b5b" />
+        <line x1="12" y1="11.5" x2="12" y2="19" stroke="#a13d3d" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M12 19a1.8 1.8 0 0 0 3.4-.8" fill="none" stroke="#a13d3d" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return null;
+}
+
+function Landing({ onJoin }) {
+  const [name, setName] = useState("");
+  const [room, setRoom] = useState("");
+  const [suggested] = useState(randomRoomCode());
+  const canJoin = name.trim().length > 0 && room.trim().length > 0;
+
+  return (
+    <div className="landing">
+      <p className="eyebrow">たんご帳をはじめる</p>
+      <h1>教材コードを決めて、<br/>学習をはじめよう。</h1>
+
+      <div className="field">
+        <label htmlFor="name">ニックネーム</label>
+        <input id="name" type="text" placeholder="例: たろう" value={name}
+          onChange={(e) => setName(e.target.value)} maxLength={20} />
+      </div>
+
+      <div className="field">
+        <label htmlFor="room">教材コード（相手と同じものを入力）</label>
+        <div className="room-row">
+          <input id="room" type="text" placeholder={suggested} value={room}
+            onChange={(e) => setRoom(e.target.value)} maxLength={30} />
+          <button className="ghost-btn" onClick={() => setRoom(suggested)}>候補を使う</button>
+        </div>
+      </div>
+
+      <button className="btn-3d primary-btn" disabled={!canJoin}
+        onClick={() => onJoin(name.trim(), room.trim())}>
+        はじめる
+      </button>
+
+      <p className="hint">
+        同じ教材コードを入力した人同士が同じ単語帳でつながります。相手にはこのページと
+        教材コードを伝えてください。ページを閉じても、また同じコードで入れば続きが見られます。
+      </p>
+      <p className="hint warn">
+        ⚠️ このアプリは公開の中継サービス（ntfy.sh）を使って通信します。暗号化はされておらず、
+        教材コードを知っている人なら誰でも内容を読めます。他人に推測されにくいコードを選び、
+        重要な個人情報のやり取りには使わないでください。
+      </p>
+    </div>
+  );
+}
+
+// STUN だけでは、CGNAT や対称型NATの回線同士だと直接つながらないことがある。
+// そのときの中継役として metered.ca の TURN（自分のアカウントのもの）を使う。
+// 最後の turns: は本物のTLSで包まれた候補で、学校や会社のDPIファイアウォールでも通りやすい。
+// ※このHTMLを見た人にはユーザー名とパスワードが見える。使用量がおかしければ
+//   metered のダッシュボードで credential を作り直すこと。
+const ICE_SERVERS = [
+  { urls: "stun:stun.relay.metered.ca:80" },
+  { urls: "turn:global.relay.metered.ca:80", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
+  { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
+  { urls: "turn:global.relay.metered.ca:443", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
+  { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
+];
+
+function WordListRoom({ name, room, onLeave }) {
+  const [messages, setMessages] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [notifyOn, setNotifyOn] = useState(
+    typeof Notification !== "undefined" && Notification.permission === "granted"
+  );
+  const [notifyMsg, setNotifyMsg] = useState(null);
+  const [showMeaning, setShowMeaning] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+  const [modal, setModal] = useState(null); // null | "settings" | "stats"
+  const [connState, setConnState] = useState("connecting"); // connecting | live | reconnecting
+  const messagesRef = useRef(null);
+  const esRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
+  const sinceRef = useRef("all");
+  const loadedRef = useRef(false);
+  const seenIdsRef = useRef(new Set());
+  const isAtBottomRef = useRef(true);
+  const topic = useRef(roomToTopic(room)).current;
+
+  // ---- WebRTC voice call state ----
+  const [callStatus, setCallStatus] = useState("idle"); // idle | outgoing | incoming | connecting | active
+  const [incomingOffer, setIncomingOffer] = useState(null); // { callId, from, sdp }
+  const [callError, setCallError] = useState(null);
+  const [callNotice, setCallNotice] = useState(null);
+  const [muted, setMuted] = useState(false);
+  const [callPartner, setCallPartner] = useState(null);
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteAudioRef = useRef(null);
+  const callIdRef = useRef(null);
+  const pendingCandidatesRef = useRef([]);
+  const isCallerRef = useRef(false);          // 自分が発信側か(ICE再起動のofferは発信側だけが出す)
+  const restartCountRef = useRef(0);
+  const disconnectTimerRef = useRef(null);
+  const giveUpTimerRef = useRef(null);
+  const ringingCallIdRef = useRef(null); // 着信中(応答前)のcallId。応答前に届くICE候補を溜めるために使う
+  const outgoingTimeoutRef = useRef(null);
+  const hasConnectedRef = useRef(false);
+  const [callRoute, setCallRoute] = useState(null); // null | "direct" | "relay"
+  const [routeLog, setRouteLog] = useState([]);
+  const routeSigRef = useRef(null);
+  const callRouteIntervalRef = useRef(null);
+  const handleSignalRef = useRef(null);
+
+  // Turn one raw ntfy JSON line into a message we can render, and push it
+  // into state. Shared by the initial history fetch and the live stream so
+  // both paths behave identically.
+  const processLine = useCallback((line) => {
+    let obj;
+    try { obj = JSON.parse(line); } catch (e) { return; }
+    if (obj.event !== "message" || !obj.message) return;
+    let payload;
+    try {
+      payload = JSON.parse(obj.message);
+    } catch (e) {
+      payload = { sender: "?", text: obj.message };
+    }
+
+    if (payload.kind === "call-signal") {
+      // Skip signals replayed from history (initial /json?since=all fetch,
+      // or a long-stalled reconnect) - only ever act on fresh signaling.
+      const ageSec = obj.time ? (Date.now() / 1000 - obj.time) : 0;
+      if (ageSec <= 30 && handleSignalRef.current) {
+        handleSignalRef.current(payload);
+      }
+      return;
+    }
+
+    const msg = {
+      id: obj.id,
+      sender: payload.sender || "不明",
+      text: payload.text || obj.message,
+      ts: (obj.time || Date.now() / 1000) * 1000,
+    };
+    sinceRef.current = obj.id;
+
+    let isNew = false;
+    setMessages((prev) => {
+      const base = prev || [];
+      if (base.some((m) => m.id === msg.id)) return base;
+      isNew = true;
+      return [...base, msg].sort((a, b) => a.ts - b.ts).slice(-300);
+    });
+
+    if (isNew && loadedRef.current && msg.sender !== name &&
+        (document.hidden || !document.hasFocus())) {
+      playChime();
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        try {
+          const n = new Notification("たんご帳", {
+            body: "新しい単語が追加されました",
+            tag: `chat-${topic}`,
+          });
+          n.onclick = () => { window.focus(); };
+        } catch (e) { /* ignore */ }
+      }
+    }
+  }, [name, topic]);
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const url = `${NTFY_BASE}/${topic}/json?poll=1&since=all`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      text.split("\n").map((l) => l.trim()).filter(Boolean).forEach(processLine);
+      setMessages((prev) => prev ?? []);
+      setError(null);
+    } catch (e) {
+      const reason = e && e.message ? e.message : "通信エラー";
+      setError(`読み込めませんでした（${reason}）。ネット接続を確認してください。`);
+      setMessages((prev) => prev ?? []);
+    }
+  }, [topic, processLine]);
+
+  // ---- WebRTC voice call: signaling helpers ----
+
+  const sendCallMessage = useCallback((body) => {
+    fetch(`${NTFY_BASE}/${topic}`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+      body: JSON.stringify(body),
+    }).catch(() => {});
+  }, [topic]);
+
+  const sendSignal = useCallback((type, extra = {}) => {
+    sendCallMessage({
+      kind: "call-signal",
+      type,
+      from: name,
+      callId: callIdRef.current,
+      ...extra,
+    });
+  }, [sendCallMessage, name]);
+
+  const cleanupCall = useCallback(() => {
+    if (outgoingTimeoutRef.current) {
+      clearTimeout(outgoingTimeoutRef.current);
+      outgoingTimeoutRef.current = null;
+    }
+    if (callRouteIntervalRef.current) {
+      clearInterval(callRouteIntervalRef.current);
+      callRouteIntervalRef.current = null;
+    }
+    if (disconnectTimerRef.current) { clearTimeout(disconnectTimerRef.current); disconnectTimerRef.current = null; }
+    if (giveUpTimerRef.current) { clearTimeout(giveUpTimerRef.current); giveUpTimerRef.current = null; }
+    restartCountRef.current = 0;
+    if (pcRef.current) {
+      pcRef.current.onicecandidate = null;
+      pcRef.current.ontrack = null;
+      pcRef.current.onconnectionstatechange = null;
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((t) => t.stop());
+      localStreamRef.current = null;
+    }
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+    pendingCandidatesRef.current = [];
+    ringingCallIdRef.current = null;
+    callIdRef.current = null;
+    hasConnectedRef.current = false;
+    setIncomingOffer(null);
+    setCallPartner(null);
+    setMuted(false);
+    setCallRoute(null);
+    routeSigRef.current = null;
+    setCallStatus("idle");
+  }, []);
+
+  // Figures out whether the active call is going peer-to-peer or being
+  // relayed through the TURN server, by looking at which candidate pair
+  // WebRTC actually selected for the connection.
+  const checkCallRoute = useCallback(async (pc) => {
+    try {
+      const stats = await pc.getStats();
+      let pairId = null;
+      stats.forEach((r) => {
+        if (r.type === "transport" && r.selectedCandidatePairId) pairId = r.selectedCandidatePairId;
+      });
+      if (!pairId) {
+        stats.forEach((r) => {
+          if (r.type === "candidate-pair" && (r.selected || (r.nominated && r.state === "succeeded"))) {
+            pairId = r.id;
+          }
+        });
+      }
+      if (!pairId) return;
+      const pair = stats.get(pairId);
+      if (!pair) return;
+      const local = stats.get(pair.localCandidateId);
+      const remote = stats.get(pair.remoteCandidateId);
+      const isRelay = (local && local.candidateType === "relay") || (remote && remote.candidateType === "relay");
+      setCallRoute(isRelay ? "relay" : "direct");
+      // ---- route log: 経路の詳細をログに出す(経路が変わったときだけ追記) ----
+      const fmt = (c) => c
+        ? `${c.candidateType}/${c.protocol}${c.relayProtocol ? "(" + c.relayProtocol + ")" : ""} ${c.address || c.ip || "?"}:${c.port ?? "?"}`
+        : "?";
+      const sig = `${isRelay}|${fmt(local)}|${fmt(remote)}`;
+      if (sig !== routeSigRef.current) {
+        const first = routeSigRef.current === null;
+        routeSigRef.current = sig;
+        const rtt = typeof pair.currentRoundTripTime === "number" ? `${Math.round(pair.currentRoundTripTime * 1000)}ms` : "-";
+        const line = `${new Date().toLocaleTimeString("ja-JP", { hour12: false })} ${isRelay ? "中継経由" : "直接接続"} | 自分: ${fmt(local)} | 相手: ${fmt(remote)} | RTT ${rtt}`;
+        console.log("[call-route]", line);
+        setRouteLog((prev) => (first ? [line] : [...prev, line]).slice(-8));
+      }
+    } catch (e) { /* ignore - just don't show a route badge */ }
+  }, []);
+
+  const createPeerConnection = useCallback(() => {
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    pc.onicecandidate = (e) => {
+      if (e.candidate) sendSignal("ice", { candidate: e.candidate.toJSON() });
+    };
+    pc.ontrack = (e) => {
+      if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0];
+    };
+    // 通話中に経路が死んだとき、発信側がICEを再起動して新しい経路を探す。
+    const restartIce = async () => {
+      if (!isCallerRef.current || pcRef.current !== pc) return;
+      if (pc.signalingState !== "stable" || restartCountRef.current >= 5) return;
+      restartCountRef.current += 1;
+      try {
+        const offer = await pc.createOffer({ iceRestart: true });
+        await pc.setLocalDescription(offer);
+        sendSignal("reoffer", { sdp: pc.localDescription });
+      } catch (e) { /* ignore */ }
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "connecting") {
+        setCallStatus((s) => (s === "active" ? s : "connecting"));
+      } else if (pc.connectionState === "connected") {
+        if (outgoingTimeoutRef.current) {
+          clearTimeout(outgoingTimeoutRef.current);
+          outgoingTimeoutRef.current = null;
+        }
+        hasConnectedRef.current = true;
+        restartCountRef.current = 0;
+        if (disconnectTimerRef.current) { clearTimeout(disconnectTimerRef.current); disconnectTimerRef.current = null; }
+        if (giveUpTimerRef.current) { clearTimeout(giveUpTimerRef.current); giveUpTimerRef.current = null; }
+        setCallStatus("active");
+        setCallNotice("通話が繋がりました");
+        checkCallRoute(pc);
+        if (callRouteIntervalRef.current) clearInterval(callRouteIntervalRef.current);
+        // The selected route can in theory change mid-call (e.g. an ICE
+        // restart), so keep re-checking every few seconds rather than once.
+        callRouteIntervalRef.current = setInterval(() => checkCallRoute(pc), 5000);
+      } else if (pc.connectionState === "disconnected") {
+        // 一時的な途切れで戻ることもあるので、3秒待ってから再起動する
+        if (hasConnectedRef.current && !disconnectTimerRef.current) {
+          disconnectTimerRef.current = setTimeout(() => {
+            disconnectTimerRef.current = null;
+            if (pc.connectionState === "disconnected") restartIce();
+          }, 3000);
+        }
+      } else if (pc.connectionState === "failed") {
+        if (hasConnectedRef.current) {
+          // 一度つながった通話は、すぐ切らずに再接続を試みる(最大20秒)
+          restartIce();
+          if (!giveUpTimerRef.current) {
+            giveUpTimerRef.current = setTimeout(() => {
+              giveUpTimerRef.current = null;
+              if (pcRef.current === pc && pc.connectionState !== "connected") {
+                setCallError("通話が切断されました（接続が失われました）。");
+                cleanupCall();
+              }
+            }, 20000);
+          }
+        } else {
+          setCallError("接続できませんでした。お互いのネットワーク環境が原因で繋がらない可能性があります。");
+          cleanupCall();
+        }
+      }
+    };
+    return pc;
+  }, [sendSignal, cleanupCall, checkCallRoute]);
+
+  const startCall = useCallback(async () => {
+    if (callStatus !== "idle") return;
+    setCallError(null);
+    setCallNotice(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      isCallerRef.current = true;
+      callIdRef.current = `${name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const pc = createPeerConnection();
+      pcRef.current = pc;
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      setCallStatus("outgoing");
+      sendSignal("offer", { sdp: pc.localDescription });
+      // If nobody answers within 30s, stop ringing and tell the caller why.
+      outgoingTimeoutRef.current = setTimeout(() => {
+        outgoingTimeoutRef.current = null;
+        sendSignal("end");
+        setCallError("応答がありませんでした。相手が今この画面を開いていないか、電波・回線状況が原因の可能性があります。");
+        cleanupCall();
+      }, 30000);
+    } catch (e) {
+      setCallError("マイクを使用できませんでした。ブラウザの権限設定を確認してください。");
+      cleanupCall();
+    }
+  }, [callStatus, createPeerConnection, sendSignal, cleanupCall, name]);
+
+  const acceptCall = useCallback(async () => {
+    if (!incomingOffer) return;
+    setCallError(null);
+    setCallNotice(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      isCallerRef.current = false;
+      callIdRef.current = incomingOffer.callId;
+      const pc = createPeerConnection();
+      pcRef.current = pc;
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+      await pc.setRemoteDescription(new RTCSessionDescription(incomingOffer.sdp));
+      for (const c of pendingCandidatesRef.current) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { /* ignore */ }
+      }
+      pendingCandidatesRef.current = [];
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      ringingCallIdRef.current = null;
+      setCallPartner(incomingOffer.from);
+      setIncomingOffer(null);
+      // Not "active" yet - that's reserved for once ICE actually connects.
+      setCallStatus("connecting");
+      sendSignal("answer", { sdp: pc.localDescription });
+    } catch (e) {
+      setCallError("通話に応答できませんでした。");
+      cleanupCall();
+    }
+  }, [incomingOffer, createPeerConnection, sendSignal, cleanupCall]);
+
+  const declineCall = useCallback(() => {
+    if (incomingOffer) {
+      callIdRef.current = incomingOffer.callId;
+      sendSignal("decline");
+    }
+    cleanupCall();
+  }, [incomingOffer, sendSignal, cleanupCall]);
+
+  const endCall = useCallback(() => {
+    if (callIdRef.current) sendSignal("end");
+    cleanupCall();
+  }, [sendSignal, cleanupCall]);
+
+  const toggleMute = useCallback(() => {
+    if (!localStreamRef.current) return;
+    const nextMuted = !muted;
+    localStreamRef.current.getAudioTracks().forEach((t) => { t.enabled = !nextMuted; });
+    setMuted(nextMuted);
+  }, [muted]);
+
+  // Incoming signaling messages (offers, answers, ICE candidates, hangups)
+  // all arrive through the same ntfy topic as chat messages, tagged with
+  // kind: "call-signal" so processLine can route them here instead of
+  // treating them as vocab entries.
+  const handleSignal = useCallback(async (payload) => {
+    if (payload.from === name) return; // ignore our own message echoed back
+    const { type, callId } = payload;
+
+    if (type === "offer") {
+      if (callStatus !== "idle") {
+        sendCallMessage({ kind: "call-signal", type: "busy", from: name, callId });
+        return;
+      }
+      ringingCallIdRef.current = callId;
+      pendingCandidatesRef.current = [];
+      setCallPartner(payload.from);
+      setIncomingOffer({ callId, from: payload.from, sdp: payload.sdp });
+      setCallStatus("incoming");
+      return;
+    }
+
+    // 応答前(呼び出し中)に届いたICE候補・キャンセルの処理。
+    // callIdRef は応答するまで null なので、以前はここで全部捨てられていた。
+    if (callId === ringingCallIdRef.current && callId !== callIdRef.current) {
+      if (type === "ice") {
+        pendingCandidatesRef.current.push(payload.candidate);
+        return;
+      }
+      if (type === "end") {
+        setCallError("相手が通話をキャンセルしました。");
+        cleanupCall();
+        return;
+      }
+    }
+
+    // Every other signal type belongs to a specific call; ignore anything
+    // that isn't for the call we're currently in.
+    if (callId !== callIdRef.current) return;
+
+    // 通話中のICE再起動(再ネゴシエーション)
+    if (type === "reoffer") {
+      const pc = pcRef.current;
+      if (!pc) return;
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignal("reanswer", { sdp: pc.localDescription });
+      } catch (e) { /* ignore */ }
+      return;
+    }
+    if (type === "reanswer") {
+      if (pcRef.current) {
+        try { await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload.sdp)); } catch (e) { /* ignore */ }
+      }
+      return;
+    }
+
+    if (type === "answer") {
+      if (pcRef.current) {
+        if (outgoingTimeoutRef.current) {
+          clearTimeout(outgoingTimeoutRef.current);
+          outgoingTimeoutRef.current = null;
+        }
+        await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        for (const c of pendingCandidatesRef.current) {
+          try { await pcRef.current.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { /* ignore */ }
+        }
+        pendingCandidatesRef.current = [];
+        setCallPartner(payload.from);
+        // Not "active" yet - that's reserved for once ICE actually connects.
+        setCallStatus("connecting");
+      }
+      return;
+    }
+
+    if (type === "ice") {
+      if (pcRef.current && pcRef.current.remoteDescription) {
+        try { await pcRef.current.addIceCandidate(new RTCIceCandidate(payload.candidate)); } catch (e) { /* ignore */ }
+      } else {
+        pendingCandidatesRef.current.push(payload.candidate);
+      }
+      return;
+    }
+
+    if (type === "end") {
+      setCallError("相手が通話を終了しました。");
+      cleanupCall();
+      return;
+    }
+
+    if (type === "decline") {
+      setCallError("相手が通話に応答しませんでした。");
+      cleanupCall();
+      return;
+    }
+
+    if (type === "busy") {
+      setCallError("相手は現在ほかの通話中です。");
+      cleanupCall();
+      return;
+    }
+  }, [callStatus, cleanupCall, name, sendCallMessage, sendSignal]);
+
+  useEffect(() => { handleSignalRef.current = handleSignal; }, [handleSignal]);
+
+  useEffect(() => {
+    if (!callNotice) return;
+    const t = setTimeout(() => setCallNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [callNotice]);
+
+  useEffect(() => () => cleanupCall(), [cleanupCall]);
+
+  // A single long-lived connection instead of polling every few seconds.
+  // This is both lighter on ntfy.sh's shared servers (so it's less likely
+  // to get rate-limited on a desktop tab that stays open for hours) and
+  // recovers from drops on its own.
+  const connectSSE = useCallback(() => {
+    if (esRef.current) { esRef.current.close(); }
+    clearTimeout(reconnectTimerRef.current);
+    setConnState((prev) => (prev === "live" ? "reconnecting" : "connecting"));
+    const url = `${NTFY_BASE}/${topic}/sse?since=${encodeURIComponent(sinceRef.current)}`;
+    const es = new EventSource(url);
+    esRef.current = es;
+    es.onopen = () => {
+      setConnState("live");
+      reconnectAttemptsRef.current = 0;
+      setError(null);
+    };
+    es.onmessage = (ev) => processLine(ev.data);
+    es.onerror = () => {
+      es.close();
+      setConnState("reconnecting");
+      reconnectAttemptsRef.current += 1;
+      const delay = Math.min(2000 * reconnectAttemptsRef.current, 15000);
+      reconnectTimerRef.current = setTimeout(connectSSE, delay);
+    };
+  }, [topic, processLine]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await loadHistory();
+      if (cancelled) return;
+      loadedRef.current = true;
+      connectSSE();
+    })();
+    return () => {
+      cancelled = true;
+      clearTimeout(reconnectTimerRef.current);
+      if (esRef.current) esRef.current.close();
+    };
+  }, [loadHistory, connectSSE]);
+
+  // Some browsers silently pause a background tab's SSE connection
+  // without ever firing onerror. Force a fresh connection whenever the
+  // tab becomes visible again, so switching back after a while doesn't
+  // leave you looking at a stalled, "disconnected" screen.
+  useEffect(() => {
+    const onWake = () => {
+      if (!document.hidden) {
+        const es = esRef.current;
+        if (!es || es.readyState !== EventSource.OPEN) connectSSE();
+      }
+    };
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+    window.addEventListener("online", onWake);
+    return () => {
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+      window.removeEventListener("online", onWake);
+    };
+  }, [connectSSE]);
+
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+      isAtBottomRef.current = true;
+    }
+    // Mark everything as seen shortly after it's rendered on screen,
+    // so the "unread" filter only reflects genuinely new items.
+    if (messages && document.hasFocus() && !document.hidden) {
+      const t = setTimeout(() => {
+        messages.forEach((m) => seenIdsRef.current.add(m.id));
+      }, 1200);
+      return () => clearTimeout(t);
+    }
+  }, [messages]);
+
+  // Chat text and Japanese translations are usually different lengths, so
+  // switching "showMeaning" changes every row's height and therefore the
+  // list's total scrollHeight. If the user was reading the latest entry
+  // (bottom of the list), re-pin them to the (new) bottom so the toggle
+  // doesn't visually scroll them "back" a little. useLayoutEffect runs
+  // before the browser paints, so there's no visible jump either way.
+  // If they'd scrolled up to read older entries, isAtBottomRef is false
+  // and we leave their scroll position alone.
+  useLayoutEffect(() => {
+    const el = messagesRef.current;
+    if (el && isAtBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [showMeaning]);
+
+  const requestNotify = async () => {
+    if (typeof Notification === "undefined") {
+      setNotifyMsg("この端末のブラウザは通知に対応していません。");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      setNotifyOn((v) => !v);
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    setNotifyOn(perm === "granted");
+    setNotifyMsg(
+      perm === "granted"
+        ? "通知をオンにしました。このタブをブラウザで開いたままにしておいてください。"
+        : "通知が許可されませんでした。ブラウザの設定から変更できます。"
+    );
+  };
+
+  const handleSend = async () => {
+    const text = draft.trim();
+    if (!text || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch(`${NTFY_BASE}/${topic}`, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+        body: JSON.stringify({ sender: name, text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDraft("");
+      setError(null);
+    } catch (e) {
+      const reason = e && e.message ? e.message : "不明なエラー";
+      setError(`送信できませんでした（${reason}）。ネット接続を確認してもう一度お試しください。`);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const formatTime = (ts) => {
+    const d = new Date(ts);
+    return d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const count = messages ? messages.length : 0;
+  const level = Math.floor(count / 10) + 1;
+
+  const filtered = useMemo(() => {
+    const list = messages || [];
+    switch (activeTab) {
+      case "recent": return list.slice(-10);
+      case "theirs": return list.filter((m) => m.sender !== name);
+      case "mine": return list.filter((m) => m.sender === name);
+      case "unread": return list.filter((m) => !seenIdsRef.current.has(m.id));
+      default: return list;
+    }
+  }, [messages, activeTab, name]);
+
+  const tabs = [
+    { id: "all", label: "すべて" },
+    { id: "recent", label: "あと一歩" },
+    { id: "theirs", label: "苦手" },
+    { id: "mine", label: "超苦手" },
+    { id: "unread", label: "未出題" },
+  ];
+
+  return (
+    <React.Fragment>
+      <div className="top-bar">
+        <button className="back-btn" onClick={onLeave}>‹</button>
+        <input className="search-input" type="text" placeholder="英単語を検索…" value={draft}
+          disabled={sending}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
+          maxLength={500} />
+      </div>
+
+      {notifyMsg && <div className="notice-banner">{notifyMsg}</div>}
+      {error && <div className="error-banner">{error}</div>}
+      {callError && <div className="error-banner">{callError}</div>}
+      {callNotice && <div className="notice-banner call-notice">✅ {callNotice}</div>}
+
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: "none" }} />
+
+      {(callStatus === "outgoing" || callStatus === "connecting" || callStatus === "active") && (
+        <div className="call-bar">
+          <span className={`call-bar-dot ${callStatus === "active" ? "connected" : ""}`} />
+          <span className="call-bar-text">
+            {callStatus === "outgoing" && `発信中… ${callPartner || ""}`}
+            {callStatus === "connecting" && `接続中… ${callPartner || ""}`}
+            {callStatus === "active" && (
+              <>
+                {`通話中 ${callPartner || ""}`}
+                {callRoute && (
+                  <span className={`call-route-badge ${callRoute}`}>
+                    {callRoute === "relay" ? "中継経由" : "直接接続"}
+                  </span>
+                )}
+              </>
+            )}
+          </span>
+          {callStatus === "active" && (
+            <button className="call-bar-btn" onClick={toggleMute}>
+              {muted ? "🔇" : "🎙️"}
+            </button>
+          )}
+          <button className="call-bar-btn hangup" onClick={endCall}>📵</button>
+        </div>
+      )}
+
+      {routeLog.length > 0 && (
+        <div className="route-log">
+          <button onClick={() => setRouteLog([])}>✕</button>
+          {routeLog.map((l, i) => <div key={i}>{l}</div>)}
+        </div>
+      )}
+
+      <div className="action-row">
+        <button className={`pill-btn show-toggle ${showMeaning ? "active" : ""}`}
+          onClick={() => setShowMeaning((v) => !v)}>
+          あ 日本語を表示
+        </button>
+        <button className="pill-btn" onClick={() => setModal("settings")}>
+          ✎ ステータス編集
+        </button>
+      </div>
+
+      {callStatus === "incoming" && incomingOffer && (
+        <div className="sheet-backdrop">
+          <div className="sheet call-sheet">
+            <h2>📞 着信中…</h2>
+            <p className="call-caller">着信があります</p>
+            <div className="call-sheet-actions">
+              <button className="btn-3d call-accept" onClick={acceptCall}>応答する</button>
+              <button className="sheet-leave call-decline" onClick={declineCall}>拒否する</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="tabs">
+        {tabs.map((t) => (
+          <button key={t.id} className={`tab ${activeTab === t.id ? "active" : ""}`}
+            onClick={() => setActiveTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="messages" ref={messagesRef}
+        onScroll={() => {
+          const el = messagesRef.current;
+          if (el) {
+            isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+          }
+        }}>
+        {messages === null && <div className="empty-state">読み込み中…</div>}
+        {messages !== null && filtered.length === 0 && (
+          <div className="empty-state">
+            まだ単語がありません。<br/>最初のひとことを送ってみましょう。
+          </div>
+        )}
+        {messages !== null && filtered.map((m, i) => {
+          const mine = m.sender === name;
+          const word = wordFor(m.id);
+          return (
+            <div key={m.id} className="word-row">
+              <div className="word-row-num">{i + 1}</div>
+              <button className="speaker-btn" onClick={() => speak(word)}>🔊</button>
+              <div className="word-row-main">
+                <div className="word-row-english">{word}</div>
+                {showMeaning
+                  ? <div className="word-row-meaning">{meaningFor(m.id)}</div>
+                  : <div className="word-row-meaning">{m.text}</div>}
+              </div>
+              <div className="word-row-status">
+                <StatusIcon mine={mine} sender={m.sender} />
+                <span className="word-row-time">{formatTime(m.ts)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="status-line">
+        {connState === "live" && "リアルタイムで自動更新中"}
+        {connState === "connecting" && "接続中…"}
+        {connState === "reconnecting" && "接続が切れました。再接続しています…"}
+      </div>
+
+      <div className="bottom-nav">
+        <button className="nav-btn active"
+          onClick={() => { const el = messagesRef.current; if (el) el.scrollTop = el.scrollHeight; }}>
+          🏠
+        </button>
+        <button className={`nav-btn ${callStatus !== "idle" ? "active" : ""}`}
+          onClick={() => {
+            if (callStatus === "idle") startCall();
+            else if (callStatus === "outgoing" || callStatus === "connecting" || callStatus === "active") endCall();
+          }}>
+          🎧
+        </button>
+        <button className="nav-btn" onClick={() => setModal("stats")}>🏆</button>
+        <button className="nav-btn" onClick={() => setModal("settings")}>👤</button>
+        <button className="nav-btn" onClick={() => setModal("settings")}>⚙️</button>
+      </div>
+
+      {modal === "settings" && (
+        <div className="sheet-backdrop" onClick={() => setModal(null)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <h2>ステータス編集</h2>
+            <div className="sheet-row">
+              <span>ニックネーム</span>
+              <span className="sheet-value">{name}</span>
+            </div>
+            <div className="sheet-row">
+              <span>教材コード</span>
+              <span className="sheet-value">{room}</span>
+            </div>
+            <div className="sheet-row">
+              <span>通知</span>
+              <button className={`toggle-switch ${notifyOn ? "on" : ""}`} onClick={requestNotify} />
+            </div>
+            <button className="btn-3d sheet-close" onClick={() => setModal(null)}>閉じる</button>
+            <button className="sheet-leave" onClick={onLeave}>この単語帳から退出する</button>
+          </div>
+        </div>
+      )}
+
+      {modal === "stats" && (
+        <div className="sheet-backdrop" onClick={() => setModal(null)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <h2>ランキング</h2>
+            <div className="stat-big">Lv.{level}</div>
+            <div className="stat-sub">これまでに {count} 語を学習しました</div>
+            <button className="btn-3d sheet-close" onClick={() => setModal(null)}>閉じる</button>
+          </div>
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+function App() {
+  const [session, setSession] = useState(null);
+
+  if (!session) {
+    return (
+      <div className="card">
+        <Landing onJoin={(name, room) => setSession({ name, room })} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="card">
+      <WordListRoom name={session.name} room={session.room} onLeave={() => setSession(null)} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app-root")).render(<App />);
+</script>
+</body>
+</html>
