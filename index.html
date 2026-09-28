@@ -765,6 +765,10 @@ function Landing({ onJoin }) {
 // 最後の turns: は本物のTLSで包まれた候補で、学校や会社のDPIファイアウォールでも通りやすい。
 // ※このHTMLを見た人にはユーザー名とパスワードが見える。使用量がおかしければ
 //   metered のダッシュボードで credential を作り直すこと。
+// テスト用: URLの末尾に ?relay=1 (または #relay=1) を付けて開くと、TURN中継だけを使う。
+// 学校のWi-FiからTURN(TCP/TLS 443)が使えるかを切り分けるためのスイッチ。
+const FORCE_RELAY = /(^|[?&#])relay=1(&|$)/.test(location.search + location.hash);
+
 const ICE_SERVERS = [
   { urls: "stun:stun.relay.metered.ca:80" },
   { urls: "turn:global.relay.metered.ca:80", username: "45a5a86f34ea816f17314335", credential: "k0dokHxoA6sJ6oeD" },
@@ -983,15 +987,37 @@ function WordListRoom({ name, room, onLeave }) {
         const rtt = typeof pair.currentRoundTripTime === "number" ? `${Math.round(pair.currentRoundTripTime * 1000)}ms` : "-";
         const line = `${new Date().toLocaleTimeString("ja-JP", { hour12: false })} ${isRelay ? "中継経由" : "直接接続"} | 自分: ${fmt(local)} | 相手: ${fmt(remote)} | RTT ${rtt}`;
         console.log("[call-route]", line);
-        setRouteLog((prev) => (first ? [line] : [...prev, line]).slice(-8));
+        setRouteLog((prev) => [...prev, line].slice(-14));
       }
     } catch (e) { /* ignore - just don't show a route badge */ }
   }, []);
 
   const createPeerConnection = useCallback(() => {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection({
+      iceServers: ICE_SERVERS,
+      iceTransportPolicy: FORCE_RELAY ? "relay" : "all",
+    });
+    // ---- 診断ログ: どんな候補が取れたか、どのICEサーバーが失敗したかを画面下に出す ----
+    const addLog = (t) => {
+      const time = new Date().toLocaleTimeString("ja-JP", { hour12: false });
+      setRouteLog((prev) => [...prev, `${time} ${t}`].slice(-14));
+    };
+    setRouteLog([`モード: ${FORCE_RELAY ? "中継固定(relay)" : "通常"}`]);
+    const seenCand = new Set();
+    pc.onicecandidateerror = (e) => {
+      addLog(`ICEエラー ${e.errorCode} ${e.url || ""} ${e.errorText || ""}`);
+    };
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState === "complete" && ![...seenCand].some((k) => k.startsWith("relay"))) {
+        addLog("⚠ TURN中継の候補が1つも取れませんでした");
+      }
+    };
     pc.onicecandidate = (e) => {
-      if (e.candidate) sendSignal("ice", { candidate: e.candidate.toJSON() });
+      if (e.candidate) {
+        const key = `${e.candidate.type || "?"}/${e.candidate.protocol || "?"}`;
+        if (!seenCand.has(key)) { seenCand.add(key); addLog(`候補取得: ${key}`); }
+        sendSignal("ice", { candidate: e.candidate.toJSON() });
+      }
     };
     pc.ontrack = (e) => {
       if (remoteAudioRef.current) remoteAudioRef.current.srcObject = e.streams[0];
