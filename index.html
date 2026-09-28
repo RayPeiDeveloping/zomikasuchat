@@ -978,7 +978,7 @@ function WordListRoom({ name, room, onLeave }) {
       setCallRoute(isRelay ? "relay" : "direct");
       // ---- route log: 経路の詳細をログに出す(経路が変わったときだけ追記) ----
       const fmt = (c) => c
-        ? `${c.candidateType}/${c.protocol}${c.relayProtocol ? "(" + c.relayProtocol + ")" : ""} ${c.address || c.ip || "?"}:${c.port ?? "?"}`
+        ? `${c.candidateType}/${c.protocol}${c.relayProtocol ? "(" + c.relayProtocol + ")" : ""} ${c.address || c.ip || "?"}:${c.port ?? "?"}${c.url ? " via " + c.url : ""}`
         : "?";
       const sig = `${isRelay}|${fmt(local)}|${fmt(remote)}`;
       if (sig !== routeSigRef.current) {
